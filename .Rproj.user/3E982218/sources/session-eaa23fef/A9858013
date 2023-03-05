@@ -1,0 +1,28 @@
+{
+    "id": "A9858013",
+    "path": "~/Documents/datascience/algoritma/bootcamp/machine learning/Telco_Customer_Churn/Telco_Customer_churn_prediction/Telco_Customer_Churn.Rmd",
+    "project_path": "Telco_Customer_Churn.Rmd",
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1678044765211.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "89,1",
+        "scrollLine": "81",
+        "last_setup_crc32": "eaa23fef8d4c7002"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1678045239,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1678045239434,
+    "read_only": false,
+    "read_only_alternatives": []
+}

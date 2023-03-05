@@ -1,0 +1,2 @@
+"0","# read data"
+"0","telco_churn_data <- read.csv(""assets/telco-churn.csv"")"

@@ -1,0 +1,660 @@
+---
+title: "Practical Statistic - Car Emission in Canada 2022"
+author: "Ricky Ariansyah"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    df_print: paged
+    code_folding: hide
+    number_sections: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+---
+
+```{=html}
+<style>
+body {
+text-align: justify
+}
+</style>
+```
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+options(scipen = 999)
+```
+
+***
+# Pengenalan
+![](https://www.umweltbundesamt.de/sites/default/files/medien/2546/bilder/fotolia_199807134_m_semen_salivanchuk.jpg)
+
+
+
+## Sejarah Mobil
+
+Mobil pertama ditemukan pada akhir abad ke-19 oleh insinyur Jerman Karl Benz. Dia dikreditkan dengan menciptakan mobil praktis pertama yang ditenagai oleh mesin pembakaran internal. Benz Patent-Motorwagen, demikian sebutannya, dipatenkan pada 29 Januari 1886 dan dianggap sebagai mobil sejati pertama. Penemuan mobil memiliki dampak besar pada dunia modern, merevolusi transportasi dan mengubah cara orang hidup dan bekerja.
+
+## Emisi Mobil
+
+Emisi mobil mengacu pada polutan yang dilepaskan ke udara dari knalpot kendaraan bermotor, seperti mobil, truk, dan bus. Emisi ini termasuk zat berbahaya seperti karbon monoksida, nitrogen oksida, partikel, dan gas rumah kaca seperti karbon dioksida. Tingkat emisi mobil yang tinggi dapat berkontribusi terhadap polusi udara, yang dapat berdampak negatif pada kesehatan manusia dan lingkungan, seperti masalah pernapasan dan perubahan iklim. Untuk mengatasi masalah ini, pemerintah di seluruh dunia telah menerapkan peraturan untuk mengurangi emisi dari kendaraan, seperti standar emisi untuk mobil baru dan penggunaan teknologi yang lebih bersih seperti kendaraan listrik dan hibrida.
+
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+Emisi adalah polutan dari kendaraan bermotor yang sebagian besar mengandung zat berbahaya seperti karbon monoksida, dll
+
+</div>
+***
+
+
+# Load Data
+
+## Membaca Dataset
+
+Data tersimpan dalam `consumption-rating.csv` berisi data transaksi emisi mobil berdasarkan merek, tipe, dan mesin. Data bersumber dari [Kaggle]('https://www.kaggle.com/datasets/rinichristy/2022-fuel-consumption-ratings').
+
+```{r}
+# read data
+car_compsution <- read.csv("data_input/consumption_rating.csv")
+```
+
+## Kamus Data
+
+Deskripsi kolom:
+
+-   `Model.Year`: Tahun Manufaktur
+-   `Make`: Manufaktur
+-   `Model`: Tipe mobil
+-   `Vehicle.Class`: Kelas Mobil
+-   `Engine.Size.L`: Kapasitas mesin dalam liter
+-   `Cylinders`: Silinder Mesin
+-   `Transmission`: Transmisi Mesin
+-   `Fuel.Type`: Tipe Bahan Bakar
+-   `Fuel.Consumption..City..L.100.km.`: Konsumsi bahan bakar untuk perjalanan dalam kota dalam liter per 100 KM
+-   `Fuel.Consumption.Hwy..L.100.km..`: Konsumsi bahan bakar untuk perjalanan jalan tol dalam liter per 100 KM
+-   `Fuel.Consumption..City..L.100.km.`: Konsumsi bahan bakar untuk perjalanan kombinasi dalam liter per 100 KM
+-   `Fuel.Consumption.Comb..mpg..`: Konsumsi bahan bakar untuk perjalanan kombinasi dalam `miles per imperial gallon`
+
+Deskripri Nilai Data :
+
+Model:
+
+-   4WD/4X4 = Four-wheel drive
+-   AWD = All-wheel drive
+-   FFV = Flexible-fuel vehicle
+-   SWB = Short wheelbase
+-   LWB = Long wheelbase
+-   EWB = Extended wheelbase
+
+Transmission:
+
+-   A = automatic
+-   AM = automated manual
+-   AS = automatic with select shift
+-   AV = continuously variable
+-   M = manual
+-   3 -- 10 = Number of gears
+
+Fuel type:
+
+-   X = regular gasoline
+-   Z = premium gasoline
+-   D = diesel
+-   E = ethanol (E85)
+-   N = natural gas
+
+## Bentuk Data
+
+```{r}
+print(paste("Total Baris : ", dim(car_compsution)[1]))
+print(paste("Total Kolom : ", dim(car_compsution)[2]))
+```
+
+## Nama Kolom
+
+```{r}
+names(car_compsution)
+```
+
+## Struktur Data
+
+```{r}
+str(car_compsution)
+```
+
+## Ringkasan Data
+
+```{r}
+head(car_compsution)
+```
+***
+
+# Data Wrangling
+
+## Data Preparation
+
+*1. Buat Nama mobil dengan menggabungkan `Make` dan `Model`*
+
+```{r}
+car_compsution$Product_name <- paste0(car_compsution$Make, " " ,car_compsution$Model)
+```
+
+*2. Ubah nama kolom sesuai dengan representasi datanya, agar lebih mudah\`*
+
+```{r}
+names(car_compsution)[names(car_compsution) == 'Vehicle.Class'] <- "Class"
+names(car_compsution)[names(car_compsution) == 'Engine.Size.L.'] <- "Engine_in_litres"
+names(car_compsution)[names(car_compsution) == 'Fuel.Type'] <- "Fuel_type"
+names(car_compsution)[names(car_compsution) == 'Fuel.Consumption..City..L.100.km.'] <- "Fuel_consumption_city_l_per_100km"
+names(car_compsution)[names(car_compsution) == 'Fuel.Consumption.Hwy..L.100.km..'] <- "Fuel_consumption_highway_l_per_100km"
+names(car_compsution)[names(car_compsution) == 'Fuel.Consumption.Comb..L.100.km..'] <- "Fuel_consumption_combine_l_per_100km"
+names(car_compsution)[names(car_compsution) == 'Fuel.Consumption.Comb..mpg..'] <- "Fuel_consumption_combine_l_mpg"
+names(car_compsution)[names(car_compsution) == 'CO2.Emissions.g.km.'] <- "CO2_emission_in_g_per_km"
+```
+
+sudah ditambahkan Product_name sebagai reprentasi unik nama mobilnya
+
+```{r}
+car_compsution[1,]
+```
+
+## Cek NA / Missing Value
+
+```{r}
+anyNA(car_compsution)
+```
+
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ... tidak ada data yang NA value
+</div>
+
+
+## Cek Duplikat Data
+
+```{r}
+sum(duplicated(car_compsution))
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ... tidak ada data duplikat
+</div>
+
+
+## Pergantian Data Tipe
+
+```{r}
+car_compsution$Make <- as.factor(car_compsution$Make)
+car_compsution$Class <- as.factor(car_compsution$Class)
+car_compsution$Fuel_type <- as.factor(car_compsution$Fuel_type)
+car_compsution$Transmission <- as.factor(car_compsution$Transmission)
+```
+
+
+
+
+# Business Question
+
+*1. Brand mobil apakah yang mempunyai konsumsi bahan bakar yang lebih baik?*
+
+*2. Mobil apakah yang mempunyai konsumsi bahan bakar yang lebih baik?*
+ 
+*3. Brand mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+*4. Mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+*5. Tipe Mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+*5. Tipe Mobil apakah yang mempunyai Konsumsi Bahan bakar yang lebih baik?*
+
+*6. Apakah Ada pengaruh Kapasitas mesin terhadap emisi dan Smog?*
+
+*7. Apakah ada pengaruh Tipe bahan bakar terhadap emisi dan smog?*
+
+*8. Apakah ada pengaruh konsumsi bahan bakar terhadap emisi dan smug?*
+
+
+
+# Exploratory Data Analysis
+
+
+## 5 Number Summary
+
+```{r}
+summary(car_compsution)
+```
+
+
+## Karakteristik C02 Rating
+
+```{r}
+boxplot(car_compsution$CO2.Rating, horizontal = T, 
+        main="Karakteristik Data CO2 Rating",
+        xlab="Value",
+        ylab="CO2 Rating",
+        col="orange",
+        border="brown"
+  )
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. sebagian besar data berkumpul pada range 3 - 5 pada CO2 rating, bisa kita kategorikan range data ini sebagai C02 rating mobil pada umumnya
+2. terdapat data yang berada di bawah pusat data, ini menandakan ada data/mobil yang mempunyai C02 rating lebih baik dari kebanyakan mobil pada umumnya
+3. terdapat data yang beradat di atas pusat data, ini menandakan ada data/mobil yang mempunyai CO2 lebih buruk dari kebanyakan mobil pada umumnya
+4. terdapat outlier yang menandakan ada data yang mempunyai CO2 yang buruk pada rentang data Q1 - Q3
+
+</div>
+
+
+## Karakteristik Smog Rating
+
+```{r}
+boxplot(car_compsution$Smog.Rating, horizontal = T,
+        main="Karakteristik Data Smog Rating",
+        xlab="Value",
+        ylab="Smog Rating",
+        col="orange",
+        border="brown"
+ )
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. sebagian besar data berkumpul pada range 3 - 6 pada Smog rating, bisa kita kategorikan range data ini sebagai Smog rating mobil pada umumnya
+2. terdapat data yang berada di bawah pusat data, ini menandakan ada data/mobil yang mempunyai Smog rating lebih baik dari kebanyakan mobil pada umumnya
+3. terdapat data yang beradat di atas pusat data, ini menandakan ada data/mobil yang mempunyai Smog lebih buruk dari kebanyakan mobil pada umumnya
+4. tidak terdapat outlier
+</div>
+
+## Karakteristik CO2 Emisi Per KM
+
+```{r}
+boxplot(car_compsution$CO2_emission_in_g_per_km, horizontal = T,
+        main="Karakteristik CO2 Emisi per KM",
+        xlab="Value",
+        ylab="CO2 Emisi",
+        col="orange",
+        border="brown")
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. sebagian besar data berkumpul pada range 210 - 300 pada C02 Emission, bisa kita kategorikan range data ini sebagai CO2 Emission mobil pada umumnya
+2. terdapat data yang berada di bawah pusat data, ini menandakan ada data/mobil yang mempunyai C02 Emission lebih baik dari kebanyakan mobil pada umumnya
+3. terdapat data yang beradat di atas pusat data, ini menandakan ada data/mobil yang mempunyai C02 Emission lebih buruk dari kebanyakan mobil pada umumnya
+4. terdapat outlier yang menandakan ada data/mobil yang mempunyai C02 Emission lebih buruk dari rentang data
+
+</div>
+
+
+## Korelasi data
+
+```{r}
+library(GGally)
+ggcorr(car_compsution, label = T)
+```
+
+```{r}
+cor.test(x = car_compsution$Engine_in_litres, y = car_compsution$CO2.Rating)
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. terdapat banyak data numerik yang berkorelasi sedang - kuat antara masing masing kolom data, negatif / positif
+2. berdasarkan cor.test relasi antara kapasitas mesin dan co2 rating signifikan
+</div>
+
+
+
+
+# Analisa Jawaban
+
+## Pertanyaan 1 
+
+*1. Brand mobil apakah yang mempunyai konsumsi bahan bakar yang lebih baik?*
+
+kita akan mengelompokkan brand mobil terhadap konsumsi bahan bakar 
+
+```{r}
+ranking_brand <- aggregate(Fuel_consumption_city_l_per_100km ~ Make, 
+                           car_compsution,
+                           FUN = mean
+                           )
+
+ranking_brand <- ranking_brand[order(ranking_brand$Fuel_consumption_city_l_per_100km), ]
+
+barplot(height = ranking_brand[1:5,]$Fuel_consumption_city_l_per_100km, 
+        horiz = T, names.arg = ranking_brand[1:5, ]$Make, las=2)
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. terdapat 5 brand mobil (Hyundai, Kia, Honda, Mitsubishi, Toyota) dengan produk konsumsi bahan bakar yang lebih rendah terhadap brand lain,
+2. Hyundai menjadi brand mobil yang paling hemat
+
+
+</div>
+
+## Pertanyaan 2
+
+*2. Mobil apakah yang mempunyai konsumsi bahan bakar yang lebih baik?*
+
+```{r}
+ranking_car <- aggregate(Fuel_consumption_city_l_per_100km ~ Product_name, 
+                           car_compsution,
+                           FUN = mean
+                           )
+
+ranking_car <- ranking_car[order(ranking_car$Fuel_consumption_city_l_per_100km), ]
+
+barplot(height = ranking_car[1:5,]$Fuel_consumption_city_l_per_100km, 
+        horiz = F, las=2, legend = ranking_car[1:5,]$Product_name, col = c("blue", "red", "green", "yellow", "black"))
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. terdapat 5 mobil (Hyundai IONIQ Blue, Hyundai IONIQ, Kia Niro, Kia Niro FE, Toyota Corolla Hybrid) dengan produk konsumsi bahan bakar yang lebih rendah terhadap brand lain,
+2. Hyundai IONIQ Blue yang paling hemat
+
+
+</div>
+
+## Pertanyaan 3
+
+*3. Brand mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+```{r}
+ranking_car_emisi <- aggregate(CO2.Rating ~ Make, 
+                           car_compsution,
+                           FUN = mean
+                           )
+
+ranking_car_emisi <- ranking_car_emisi[order(ranking_car_emisi$CO2.Rating), ]
+
+
+barplot(height = ranking_car_emisi[1:5,]$CO2.Rating, 
+        horiz = F, las=2, legend = ranking_car_emisi[1:5,]$Make, col = c("blue", "red", "green", "yellow", "black"))
+```
+brand brand tersebut jarang dimiliki, kita akan membuat batasan pada data ini yaitu sebesar 50 frequency, kemudian kita akan hitung CO2 Rate yang terbaik
+
+```{r}
+
+ranking_car_emisi_total <- xtabs(~Make, car_compsution)
+
+ranking_car_emisi_total <- as.data.frame(ranking_car_emisi_total)
+ranking_car_emisi_total <- ranking_car_emisi_total[order(ranking_car_emisi_total$Freq), ]
+
+ranking_car_emisi_total <- ranking_car_emisi_total[ranking_car_emisi_total$Freq > 50, ]
+
+car_compsution_filter <- car_compsution[car_compsution$Make %in% ranking_car_emisi_total[,1],]
+
+
+ranking_car_emisi_filter <- aggregate(CO2.Rating ~ Make, 
+                           car_compsution_filter,
+                           FUN = mean
+                           )
+
+ranking_car_emisi_filter <- ranking_car_emisi_filter[order(ranking_car_emisi_filter$CO2.Rating), ]
+
+barplot(height = ranking_car_emisi_filter[1:5,]$CO2.Rating, 
+        horiz = F, las=2, legend = ranking_car_emisi_filter[1:5,]$Make, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+
+```{r}
+ranking_car_smog_filter <- aggregate(Smog.Rating ~ Make, 
+                           car_compsution_filter,
+                           FUN = mean
+                           )
+
+ranking_car_smog_filter <- ranking_car_smog_filter[order(ranking_car_smog_filter$Smog.Rating), ]
+
+barplot(height = ranking_car_smog_filter[1:5,]$Smog.Rating, 
+        horiz = F, las=2, legend = ranking_car_smog_filter[1:5,]$Make, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. terdapat 5 mobil (Bugatti, Lamborghini, Rolls-Royce, Bentley, Dodge) dengan C02 rating yang lebih rendah terhadap brand lain, dapat kita lihat brand ini adalah brand yang jarang dimiliki
+2. jika difilter mobil yang frequensi di atas >50 pada data ini dapat kita simpulkan GMC menjadi merek yang lebih baik terhadap C02 rating
+3. jika difilter mobil yang frequensi di atas >50 pada data ini dapat kita simpulkan Porcshe menjadi merek yang lebih baik terhadap Smog rating
+
+
+</div>
+
+## Pertanyaan 4
+
+*4. Mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+```{r}
+ranking_car_name_emision_filter <- aggregate(CO2.Rating ~ Product_name, 
+                           car_compsution_filter,
+                           FUN = mean
+                           )
+
+ranking_car_name_emision_filter <- ranking_car_name_emision_filter[order(ranking_car_name_emision_filter$CO2.Rating), ]
+
+ranking_car_name_emision_filter
+```
+```{r}
+barplot(height = ranking_car_name_emision_filter[1:5,]$CO2.Rating, 
+        horiz = F, las=2, legend = ranking_car_name_emision_filter[1:5,]$Product_name, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+
+```{r}
+ranking_car_name_smog_filter <- aggregate(Smog.Rating ~ Product_name, 
+                           car_compsution_filter,
+                           FUN = mean
+                           )
+
+ranking_car_name_smog_filter <- ranking_car_name_smog_filter[order(ranking_car_name_smog_filter$Smog.Rating), ]
+
+ranking_car_name_smog_filter
+```
+```{r}
+barplot(height = ranking_car_name_smog_filter[1:5,]$Smog.Rating, 
+        horiz = F, las=2, legend = ranking_car_name_smog_filter[1:5,]$Product_name, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. dapat dilihat mobil dengan CO2 rating terendah pada tabel 1 dan barplot
+2. dapat dilihat mobil dengan Smog rating terendah pada tabel 2 dan barplot
+3. terdapat rata rata rating yang sama terhadap mobil
+
+</div>
+
+## Pertanyaan 5
+
+*5. Tipe Mobil apakah yang mempunyai Rating Emisi dan Smog yang lebih baik?*
+
+```{r}
+ranking_car_class_emission <- aggregate(CO2.Rating ~ Class, 
+                           car_compsution,
+                           FUN = mean
+                           )
+
+ranking_car_class_emission <- ranking_car_class_emission[order(ranking_car_class_emission$CO2.Rating),]
+
+barplot(height = ranking_car_class_emission[1:5,]$CO2.Rating, 
+        horiz = F, las=2, legend = ranking_car_class_emission[1:5,]$Class, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+```{r}
+ranking_car_class_smog <- aggregate(Smog.Rating ~ Class, 
+                           car_compsution,
+                           FUN = mean
+                           )
+
+ranking_car_class_smog <- ranking_car_class_smog[order(ranking_car_class_smog$Smog.Rating), ]
+
+barplot(height = ranking_car_class_smog[1:5,]$Smog.Rating, 
+        horiz = F, las=2, legend = ranking_car_class_smog[1:5,]$Class, col = c("blue", "red", "green", "yellow", "black"))
+```
+
+
+## Pertanyaan 6
+
+*6. Apakah Ada pengaruh Kapasitas mesin terhadap emisi?*
+
+```{r}
+plot(car_compsution$Engine_in_litres, 
+     y = car_compsution$CO2_emission_in_g_per_km,
+      xlab = "Kapasitas Mesin",
+      ylab = "CO2 Emisi per KM",
+      main = "Relasi Konsumsi bahan bakar VS CO2 Emisi"
+     )
+```
+```{r}
+cor(car_compsution$Engine_in_litres, car_compsution$CO2_emission_in_g_per_km)
+```
+
+```{r}
+cor.test(car_compsution$Engine_in_litres, car_compsution$CO2_emission_in_g_per_km)
+```
+
+```{r}
+cov(car_compsution$Engine_in_litres, car_compsution$CO2_emission_in_g_per_km)
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. kapasitas mesin dan co2 emisi berelasi kuat
+2. semakin besar kapasitas mesin, semakin besar juga co2 emisi
+
+</div>
+
+
+## Pertanyaan 7
+
+*7. Manakah Tipe bahan bakar yang mempunyai emisi lebih baik?*
+
+```{r}
+ranking_fuel_type <- aggregate(CO2_emission_in_g_per_km ~ Fuel_type, car_compsution, FUN = sum)
+
+ranking_fuel_type <- ranking_fuel_type[order(ranking_fuel_type$CO2_emission_in_g_per_km, decreasing = F), ]
+
+barplot(height = ranking_fuel_type$CO2_emission_in_g_per_km, horiz = T, 
+        names.arg = ranking_fuel_type$Fuel_type)
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. Etanol mempunyai kecenderungan emisi yang lebih sedikit dari bahan bakar lain
+
+</div>
+
+## Pertanyaan 8
+
+*8. Apakah ada pengaruh konsumsi bahan bakar terhadap emisi?*
+
+```{r}
+plot(car_compsution$Fuel_consumption_city_l_per_100km, 
+     y = car_compsution$CO2_emission_in_g_per_km,
+      xlab = "Konsumsi Bahan bakar per 100 KM",
+      ylab = "CO2 Emisi per KM",
+      main = "Relasi Konsumsi bahan bakar VS CO2 Emisi"
+     )
+```
+```{r}
+cor(car_compsution$Fuel_consumption_city_l_per_100km, car_compsution$CO2_emission_in_g_per_km)
+```
+
+```{r}
+cor.test(car_compsution$Fuel_consumption_city_l_per_100km, car_compsution$CO2_emission_in_g_per_km)
+```
+```{r}
+cov(car_compsution$Fuel_consumption_city_l_per_100km, car_compsution$CO2_emission_in_g_per_km)
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+insight : ...
+
+1. Konsumsi bahan bakar dan co2 emisi berelasi kuat
+2. semakin besar konsumsi bahan bakar, semakin besar co2 emisi
+
+</div>
+
+
+
+
+
+
+
+<hr />
+
+<p style="text-align: center;">
+
+A work by <a href="">Ricky Ariansyah</a>
+
+</p>
+
+<p style="text-align: center;">
+
+[<em>[rickyarians\@outlook.com](mailto:rickyarians@outlook.com){.email}</em>]{style="color: #808080;"}
+
+[<em>[linkedin](https://www.linkedin.com/in/rickyarians/){.email}</em>]{style="color: #808080;"}
+
+</p>
+</p>
